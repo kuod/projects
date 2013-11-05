@@ -4,20 +4,30 @@ import sys, os, csv
 from bx.bbi.bigwig_file import BigWigFile
 
 bwTestFile = "/cbio/grlab/share/databases/encode/gm12878/rnaSeqPolACyto/wgEncodeCshlLongRnaSeqGm12878CytosolPapMinusRawSigRep1.bigWig"
-geneListFile = "/cbio/grlab/share/databases/encode/genes/gencodeV12/wgEncodeGencodeCompV12Chr21_5col.gp"
+geneListFile = "/cbio/grlab/share/databases/genomes/H_sapiens/GENCODE/release18/gencode.v18.annotation.chr21.gtf"
 
-#Load gene information
-genes = np.loadtxt(geneListFile, dtype={'names':('transcript', 'chromosome', 'strand', 'start', 'end'),
-	'formats': ('S15', 'S10','S1','u4','u4')})
+#Load gene information in GTF format
+genesRaw = np.loadtxt(geneListFile, delimiter='\t', dtype={'names':('chromosome', 'annotation', 
+	'element', 'start', 'end', 'score', 'strand', 'frame', 'attribute'),
+	'formats': ('S5', 'S10','S10','u4','u4','S1','S1','S1','S100')})
 
 #Parse out start stop
 starts = []
 stops = []
-both = []
-for g in genes:
-	starts.append(g[3])
-	stops.append(g[4])
-	both.append([g[3],g[4]])
+genes = []
+for g in genesRaw:
+	starts.append(g[3]-2000)
+	stops.append(g[4]+2000)
+	curGene = g[8].split()[1].translate(None, '";')
+	genes.append(curGene)
+
+#genes now indexed
+pos = []
+for i in range(len(genes)):
+	pos = np.mat(np.arange(starts[i], stops[i], 1)).T
+
+
+
 
 for s in range(len(starts)):
 	print starts[s]
