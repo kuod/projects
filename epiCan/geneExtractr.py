@@ -29,8 +29,6 @@ genesRaw = np.loadtxt(geneListFile, delimiter='\t', dtype={'names':('chromosome'
 #for m in methylRaw:
 #	if m[3] >  
 
-
-
 #Parse start stop and gene names
 starts = []
 stops = []
@@ -48,11 +46,10 @@ for h in hm1Arr:
 	hm1Coord.append([h[1], h[2]])
 
 
-#Summarize gene expression for length of gene?
-bw = load(bwTestFile)
+#load bw file 
+bw = loadBw(bwTestFile)
 
 #generate gene by gene matrix
-bigList = []
 start = time.time()
 for i in range(len(genes)):
 	#pos index
@@ -71,25 +68,56 @@ for i in range(len(genes)):
 	temp = np.hstack((posMat.T,geMat.T, hmTrack.T))
 	fileName = '/cbio/grlab/projects/epiCan/results/chr21/' + genes[i] 
 	numpy.savez(fileName, temp)
-	#methylation bed
+
 end = time.time()
 print end - start
 
 
 #Needs htCoord
 def htGen(start, stop, htCoord):
-	hTrack = np.zeros(stop-start)
-	
 	htCoord = np.mat(htCoord)
-
+	hTrack = np.zeros(stop-start)
 	for posCnt in range(len(hTrack)):
 		pos = posCnt + start
+		print pos
+		raw_input("Press Enter to continue...")
 		htSourceMin = htCoord[pos > htCoord[:,0]][0,0]
+		print htSourceMin
 		htSourceMax = htCoord[pos > htCoord[:,0]][0,1]
+		print htSourceMax
 		if pos > htSourceMin and pos < htSourceMax:
-			hTrack[pos] = 1
-			print 'aok'
+			hTrack[posCnt] = 1
 	return hTrack
+
+
+startSubset = starts[1:100]
+stopSubset = stops[1:100]
+
+#testing code
+for i in range(10):
+	#pos index
+	posMat = []
+	posMat = np.mat(np.arange(startSubset[i], stopSubset[i], 1))
+	#geneExp summary
+
+	#ge from bigwig
+	geMat = []
+	geMat = np.mat(bw.get_as_array(chromosome, startSubset[i], stopSubset[i]).T)
+	geMat[np.isnan(geMat)] = 0
+
+	ts1 = time.time()
+	hmTrack = htGen(startSubset[i], stopSubset[i], hm1Coord)
+	hmTrack = np.mat(hmTrack) 
+	ts2 = time.time()
+	print ts2 - ts1
+
+	temp = np.hstack((posMat.T,geMat.T, hmTrack.T))
+	#fileName = '/cbio/grlab/projects/epiCan/results/chr21/' + genes[i] 
+	#numpy.savez(fileName, temp)
+	print np.max(temp[:,2])
+	print '\n'
+	print np.max(temp[:,1])
+#########################################
 
 
 
@@ -100,7 +128,7 @@ def loadHm(file):
 
 curGene = bw.get_as_array(chrom, start, end)
 
-def load(file):
+def loadBw(file):
 	bw = BigWigFile(open(file))
 	return bw
 
