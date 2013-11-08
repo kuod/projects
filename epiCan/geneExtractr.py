@@ -56,11 +56,12 @@ for files in os.listdir("."):
     if files.endswith(".bigWig"):
         geFileList.append(bwDir + '/' + files)
 
-
-bw = loadBw(bwTestFile)
-
-
-
+hmFileList = []
+os.chdir("/cbio/grlab/share/databases/encode/k562/histonePeaks/bw/")
+hmDir = os.getcwd()
+for files in os.listdir("."):
+	if files.endswith(".bigWig"):
+		hmFileList.append(bwDir + '/' + files)
 
 #generate gene by gene matrix
 start = time.time()
@@ -84,10 +85,13 @@ for i in range(len(genes)):
 			oneGeMat = np.mat(bwfile.get_as_array(chromosome, starts[i], stops[i]).T)
 			oneGeMat[np.isnan(oneGeMat)] = 0
 			geMat = np.hstack((geMat, oneGeMat.T))
+	hmFile = loadBw('/cbio/grlab/share/databases/encode/k562/histonePeaks/bw/wgEncodeBroadHistoneK562H3k4me1StdAln_2Reps.norm5.rawsignal.bw')
+	hmMat = np.mat(hmFile.get_as_array(chromosome, starts[i], stops[i]).T)
+	hmMat[np.isnan(hmMat)] = 0
 	#hmTrack = htGen(starts[i], stops[i], hm1Coord)
 	#hmTrack = np.mat(hmTrack) 
 #	temp = np.hstack((posMat.T,geMat.T)), hmTrack.T))
-	temp = np.hstack((posMat.T,geMat))
+	temp = np.hstack((posMat.T,geMat,hmMat.T))
 	print temp.shape
 	fileName = '/cbio/grlab/home/dkuo/tmp/' + genes[i] 
 	np.savez(fileName, temp)
