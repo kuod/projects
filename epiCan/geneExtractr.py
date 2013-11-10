@@ -3,6 +3,7 @@ import sys, os, csv
 import time
 
 from bx.bbi.bigwig_file import BigWigFile
+import h5py
 
 #set test file paths
 bwTestFile = "/cbio/grlab/share/databases/encode/gm12878/rnaSeqPolACyto/wgEncodeCshlLongRnaSeqGm12878CytosolPapMinusRawSigRep1.bigWig"
@@ -67,6 +68,9 @@ for i in range(len(genes)):
 
 	temp = np.hstack((posMat.T,geMat.T, hmTrack.T))
 	fileName = '/cbio/grlab/projects/epiCan/results/chr21/' + genes[i] 
+	
+
+
 	numpy.savez(fileName, temp)
 
 end = time.time()
@@ -80,11 +84,22 @@ def htGen(start, stop, htCoord):
 	for posCnt in range(len(hTrack)):
 		pos = posCnt + start
 		print pos
-		raw_input("Press Enter to continue...")
+		
 		htSourceMin = htCoord[pos > htCoord[:,0]][0,0]
 		print htSourceMin
 		htSourceMax = htCoord[pos > htCoord[:,0]][0,1]
 		print htSourceMax
+		raw_input("Press Enter to continue...")
+		if pos > htSourceMin:
+			print 'pos less than htSourceMin'
+		else:
+			print 'pos not less than htSourceMin'
+
+		if pos < htSourceMax:
+			print 'pos not less than htSourceMax'
+		else:
+			print 'pos less than htSourceMax'
+
 		if pos > htSourceMin and pos < htSourceMax:
 			hTrack[posCnt] = 1
 	return hTrack
