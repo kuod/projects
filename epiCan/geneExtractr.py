@@ -19,6 +19,8 @@ genesRaw = np.loadtxt(geneListFile, delimiter='\t', dtype={'names':('chromosome'
 	'element', 'start', 'end', 'score', 'strand', 'frame', 'attribute'),
 	'formats': ('S5', 'S10','S10','u4','u4','S1','S1','S1','S100')})
 
+chromosome = 'chr21'
+
 #Get methylation patterns
 #methylation in bed
 #methylRaw = np.loadtxt(methylFile, delimiter='\t', usecols=(0,1,2,4), dtype={'names':('chrom', 'chromStart', 'chromEnd',
@@ -47,8 +49,20 @@ for h in hm1Arr:
 	hm1Coord.append([h[1], h[2]])
 
 
-#load bw file 
-bw = loadBw(bwTestFile)
+#load ge bw file 
+geFileList = []
+os.chdir("/cbio/grlab/share/databases/encode/k562/rnaSeqPolACyto/")
+bwDir = os.getcwd() 
+for files in os.listdir("."):
+    if files.endswith(".bigWig"):
+        geFileList.append(bwDir + '/' + files)
+
+hmFileList = []
+os.chdir("/cbio/grlab/share/databases/encode/k562/histonePeaks/bw/")
+hmDir = os.getcwd()
+for files in os.listdir("."):
+	if files.endswith(".bigWig"):
+		hmFileList.append(bwDir + '/' + files)
 
 #generate gene by gene matrix
 start = time.time()
@@ -58,21 +72,30 @@ for i in range(len(genes)):
 	posMat = np.mat(np.arange(starts[i], stops[i], 1))
 	#geneExp summary
 
-	#ge from bigwig
+	#ge from bigwiglist
 	geMat = []
-	geMat = np.mat(bw.get_as_array(chromosome, starts[i], stops[i]).T)
-	geMat[np.isnan(geMat)] = 0
-
-	hmTrack = htGen(starts[i], stops[i], hm1Coord)
-	hmTrack = np.mat(hmTrack) 
-
-	temp = np.hstack((posMat.T,geMat.T, hmTrack.T))
-	fileName = '/cbio/grlab/projects/epiCan/results/chr21/' + genes[i] 
-	
-
-
-	numpy.savez(fileName, temp)
-
+	for bw_count in range(len(geFileList)):
+		if bw_count == 0:
+			bwfile = loadBw(geFileList[bw_count])
+			oneGeMat = np.mat(bwf.get_as_array(chromosome, starts[i], stops[i]).T)
+			oneGeMat[np.isnan(oneGeMat)] = 0
+			geMat = np.mat(geMat)
+			geMat = np.mat(oneGeMat.T)
+		else:
+			bwfile = loadBw(geFileList[bw_count])
+			oneGeMat = np.mat(bwfile.get_as_array(chromosome, starts[i], stops[i]).T)
+			oneGeMat[np.isnan(oneGeMat)] = 0
+			geMat = np.hstack((geMat, oneGeMat.T))
+	hmFile = loadBw('/cbio/grlab/share/databases/encode/k562/histonePeaks/bw/wgEncodeBroadHistoneK562H3k4me1StdAln_2Reps.norm5.rawsignal.bw')
+	hmMat = np.mat(hmFile.get_as_array(chromosome, starts[i], stops[i]).T)
+	hmMat[np.isnan(hmMat)] = 0
+	#hmTrack = htGen(starts[i], stops[i], hm1Coord)
+	#hmTrack = np.mat(hmTrack) 
+#	temp = np.hstack((posMat.T,geMat.T)), hmTrack.T))
+	temp = np.hstack((posMat.T,geMat,hmMat.T))
+	print temp.shape
+	fileName = '/cbio/grlab/home/dkuo/tmp/' + genes[i] 
+	np.savez(fileName, temp)
 end = time.time()
 print end - start
 
