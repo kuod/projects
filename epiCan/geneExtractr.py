@@ -1,9 +1,8 @@
 import numpy as np
 import sys, os, csv
 import time
-
-from bx.bbi.bigwig_file import BigWigFile
 import h5py
+from bx.bbi.bigwig_file import BigWigFile
 
 #set test file paths
 bwTestFile = "/cbio/grlab/share/databases/encode/gm12878/rnaSeqPolACyto/wgEncodeCshlLongRnaSeqGm12878CytosolPapMinusRawSigRep1.bigWig"
@@ -13,11 +12,11 @@ methylFile = "/cbio/grlab/share/databases/encode/k562/methyl/wgEncodeHaibMethylR
 #TODO Take in path of HM folder  
 hm_1 = "/cbio/grlab/share/databases/encode/k562/histonePeaks/wgEncodeBroadHistoneK562H3k4me3StdAln_chr21.bed"
 
-
 #Load gene information in GTF format
-genesRaw = np.loadtxt(geneListFile, delimiter='\t', dtype={'names':('chromosome', 'annotation', 
-	'element', 'start', 'end', 'score', 'strand', 'frame', 'attribute'),
-	'formats': ('S5', 'S10','S10','u4','u4','S1','S1','S1','S100')})
+genesRaw = np.loadtxt(geneListFile, delimiter='\t', 
+	dtype={'names':('chromosome', 'annotation','element', 'start', 'end', 
+	'score', 'strand', 'frame', 'attribute'),'formats': ('S5', 'S10','S10',
+	'u4','u4','S1','S1','S1','S100')})
 
 chromosome = 'chr21'
 
@@ -37,17 +36,10 @@ starts = []
 stops = []
 genes = []
 for g in genesRaw:
-	starts.append(g[3]-2000)
-	stops.append(g[4]+2000)
+	starts.append(g[3]-1000)
+	stops.append(g[4]+1000)
 	curGene = g[8].split()[1].translate(None, '";')
 	genes.append(curGene)
-
-#turn histone track into coordinate pairs
-hm1Arr = loadHm(hm_1)
-hm1Coord = []
-for h in hm1Arr:
-	hm1Coord.append([h[1], h[2]])
-
 
 #load ge bw file 
 geFileList = []
@@ -67,6 +59,7 @@ for files in os.listdir("."):
 #generate gene by gene matrix
 start = time.time()
 for i in range(len(genes)):
+	middle1 = time.time()
 	#pos index
 	posMat = []
 	posMat = np.mat(np.arange(starts[i], stops[i], 1))
@@ -77,7 +70,7 @@ for i in range(len(genes)):
 	for bw_count in range(len(geFileList)):
 		if bw_count == 0:
 			bwfile = loadBw(geFileList[bw_count])
-			oneGeMat = np.mat(bwf.get_as_array(chromosome, starts[i], stops[i]).T)
+			oneGeMat = np.mat(bwfile.get_as_array(chromosome, starts[i], stops[i]).T)
 			oneGeMat[np.isnan(oneGeMat)] = 0
 			geMat = np.mat(geMat)
 			geMat = np.mat(oneGeMat.T)
@@ -91,41 +84,67 @@ for i in range(len(genes)):
 	hmMat[np.isnan(hmMat)] = 0
 	#hmTrack = htGen(starts[i], stops[i], hm1Coord)
 	#hmTrack = np.mat(hmTrack) 
-#	temp = np.hstack((posMat.T,geMat.T)), hmTrack.T))
+	#temp = np.hstack((posMat.T,geMat.T)), hmTrack.T))
 	temp = np.hstack((posMat.T,geMat,hmMat.T))
-	print temp.shape
-	fileName = '/cbio/grlab/home/dkuo/tmp/' + genes[i] 
-	np.savez(fileName, temp)
+#	print temp.shape
+	fileName = '/cbio/grlab/home/dkuo/tmp/' + genes[i] + '.hdf5'
+	f = h5py.File(fileName, 'a')
+	f.create_dataset(name=genes[i], data=temp)
+
+	for colNum in range(len(geFileList) + 1):
+		if colNum == 0:
+			f.attrs.create(name=str(colNum), data='position')
+
+		elif colNum > 0 & colNum < len(geFileList) - 1:
+			#replace len(geFileList) with number of GE Tracks
+			f.attrs.create(name=str(colNum), data='Gene expression')
+
+			#TODO: include methylation tracks as well
+		else:
+			f.attrs.create(name=str(colNum), data='Histone Tracks')
+
+	f.close
+	
+	middle2 = time.time()
+	print middle2 - middle1
+
+#	np.savez(fileName, temp)
 end = time.time()
 print end - start
 
 
-#Needs htCoord
-def htGen(start, stop, htCoord):
-	htCoord = np.mat(htCoord)
-	hTrack = np.zeros(stop-start)
-	for posCnt in range(len(hTrack)):
-		pos = posCnt + start
-		print pos
-		
-		htSourceMin = htCoord[pos > htCoord[:,0]][0,0]
-		print htSourceMin
-		htSourceMax = htCoord[pos > htCoord[:,0]][0,1]
-		print htSourceMax
-		raw_input("Press Enter to continue...")
-		if pos > htSourceMin:
-			print 'pos less than htSourceMin'
-		else:
-			print 'pos not less than htSourceMin'
+###TRIED: histoneTrack gen would use a bed file but instead, use the raw signal
+#def htGen(start, stop, htCoord):
+#	htCoord = np.mat(htCoord)
+#	hTrack = np.zeros(stop-start)
+#	for posCnt in range(len(hTrack)):
+#		pos = posCnt + start
+#		print pos
+#		
+#		htSourceMin = htCoord[pos > htCoord[:,0]][0,0]
+#		print htSourceMin
+#		htSourceMax = htCoord[pos > htCoord[:,0]][0,1]
+#		print htSourceMax
+#		raw_input("Press Enter to continue...")
+#		if pos > htSourceMin:
+#			print 'pos less than htSourceMin'
+#		else:
+#			print 'pos not less than htSourceMin'
+#
+#		if pos < htSourceMax:
+#			print 'pos not less than htSourceMax'
+#		else:
+#			print 'pos less than htSourceMax'
+#
+#		if pos > htSourceMin and pos < htSourceMax:
+#			hTrack[posCnt] = 1
+#	return hTrack
 
-		if pos < htSourceMax:
-			print 'pos not less than htSourceMax'
-		else:
-			print 'pos less than htSourceMax'
-
-		if pos > htSourceMin and pos < htSourceMax:
-			hTrack[posCnt] = 1
-	return hTrack
+#turn histone track into coordinate pairs
+#hm1Arr = loadHm(hm_1)
+#hm1Coord = []
+#for h in hm1Arr:
+#	hm1Coord.append([h[1], h[2]])
 
 
 startSubset = starts[1:100]
@@ -140,7 +159,7 @@ for i in range(10):
 
 	#ge from bigwig
 	geMat = []
-	geMat = np.mat(bw.get_as_array(chromosome, startSubset[i], stopSubset[i]).T)
+	geMat = np.mat(bwf.get_as_array(chromosome, startSubset[i], stopSubset[i]).T)
 	geMat[np.isnan(geMat)] = 0
 
 	ts1 = time.time()
@@ -160,14 +179,14 @@ for i in range(10):
 
 
 def loadHm(file):
-	hmArray = np.loadtxt(file, delimiter='\t', usecols=(0,1,2,4), dtype={'names':('chrom', 'chromStart', 'chromEnd',
-	'score'), 'formats': ('S5', 'u4','u4','u4')}) 
+	hmArray = np.loadtxt(file, delimiter='\t', usecols=(0,1,2,4), 
+	dtype={'names':('chrom', 'chromStart', 'chromEnd','score'), 
+	'formats': ('S5', 'u4','u4','u4')}) 
 	return hmArray
-
-curGene = bw.get_as_array(chrom, start, end)
 
 def loadBw(file):
 	bw = BigWigFile(open(file))
 	return bw
 
 
+curGene = bw.get_as_array(chrom, start, end)
