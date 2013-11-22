@@ -53,8 +53,13 @@ hmFileList = []
 os.chdir("/cbio/grlab/share/databases/encode/k562/histonePeaks/bw/")
 hmDir = os.getcwd()
 for files in os.listdir("."):
-	if files.endswith(".bigWig"):
-		hmFileList.append(bwDir + '/' + files)
+	if files.endswith(".bw"):
+		hmFileList.append(hmDir + '/' + files)
+
+#loadBW func
+def loadBw(file):
+	bw = BigWigFile(open(file))
+	return bw
 
 #generate gene by gene matrix
 start = time.time()
@@ -67,6 +72,7 @@ for i in range(len(genes)):
 
 	#ge from bigwiglist
 	geMat = []
+	hmMat = []
 	for bw_count in range(len(geFileList)):
 		if bw_count == 0:
 			bwfile = loadBw(geFileList[bw_count])
@@ -79,15 +85,29 @@ for i in range(len(genes)):
 			oneGeMat = np.mat(bwfile.get_as_array(chromosome, starts[i], stops[i]).T)
 			oneGeMat[np.isnan(oneGeMat)] = 0
 			geMat = np.hstack((geMat, oneGeMat.T))
-	hmFile = loadBw('/cbio/grlab/share/databases/encode/k562/histonePeaks/bw/wgEncodeBroadHistoneK562H3k4me1StdAln_2Reps.norm5.rawsignal.bw')
-	hmMat = np.mat(hmFile.get_as_array(chromosome, starts[i], stops[i]).T)
-	hmMat[np.isnan(hmMat)] = 0
+	for hm_count in range(len(hmFileList)):
+		if hm_count == 0:
+			hmfile = loadBw(hmFileList[hm_count])
+			oneHmMat = np.mat(hmfile.get_as_array(chromosome, starts[i], stops[i]).T)
+			oneHmMat[np.isnan(oneHmMat)] = 0
+			hmMat = np.mat(hmMat)
+			hmMat = np.mat(oneHmMat.T)
+		else:
+			hmfile = loadBw(hmFileList[hm_count])
+			oneHmMat = np.mat(hmfile.get_as_array(chromosome, starts[i], stops[i]).T)
+			oneHmMat[np.isnan(oneHmMat)] = 0
+			hmMat = np.hstack((hmMat, oneHmMat.T))
+
+
+	#hmFile = loadBw('/cbio/grlab/share/databases/encode/k562/histonePeaks/bw/wgEncodeBroadHistoneK562H3k4me1StdAln_2Reps.norm5.rawsignal.bw')
+	#hmMat = np.mat(hmFile.get_as_array(chromosome, starts[i], stops[i]).T)
+	#hmMat[np.isnan(hmMat)] = 0
 	#hmTrack = htGen(starts[i], stops[i], hm1Coord)
 	#hmTrack = np.mat(hmTrack) 
 	#temp = np.hstack((posMat.T,geMat.T)), hmTrack.T))
-	temp = np.hstack((posMat.T,geMat,hmMat.T))
+	temp = np.hstack((posMat.T,geMat,hmMat))
 #	print temp.shape
-	fileName = '/cbio/grlab/home/dkuo/tmp/' + genes[i] + '.hdf5'
+	fileName = '/cbio/grlab/home/dkuo/temp/' + genes[i] + '.hdf5'
 	f = h5py.File(fileName, 'a')
 	f.create_dataset(name=genes[i], data=temp)
 
@@ -104,7 +124,6 @@ for i in range(len(genes)):
 			f.attrs.create(name=str(colNum), data='Histone Tracks')
 
 	f.close
-	
 	middle2 = time.time()
 	print middle2 - middle1
 
@@ -176,17 +195,8 @@ for i in range(10):
 	print np.max(temp[:,1])
 #########################################
 
-
-
 def loadHm(file):
 	hmArray = np.loadtxt(file, delimiter='\t', usecols=(0,1,2,4), 
 	dtype={'names':('chrom', 'chromStart', 'chromEnd','score'), 
 	'formats': ('S5', 'u4','u4','u4')}) 
 	return hmArray
-
-def loadBw(file):
-	bw = BigWigFile(open(file))
-	return bw
-
-
-curGene = bw.get_as_array(chrom, start, end)
