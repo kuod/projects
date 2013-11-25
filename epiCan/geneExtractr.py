@@ -100,7 +100,6 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 		hmMat = []
 		geTrackNames = []
 		hmTrackNames = []
-		print hmFileList
 		for ge_count in range(len(geFileList)):
 			if ge_count == 0:
 				geTrackNames.append(geFileList[ge_count].split("/")[-1])
@@ -123,33 +122,27 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 				oneHmMat[np.isnan(oneHmMat)] = 0
 				hmMat = np.mat(hmMat)
 				hmMat = np.mat(oneHmMat.T)
-				print hmMat.shape
 			else:
 				hmTrackNames.append(hmFileList[hm_count].split("/")[-1])
 				hmFile = loadBw(hmFileList[hm_count])
 				oneHmMat = np.mat(hmFile.get_as_array(chromosome, starts[i], stops[i]).T)
 				oneHmMat[np.isnan(oneHmMat)] = 0
 				hmMat = np.hstack((hmMat, oneHmMat.T))
-				print hmMat.shape
-		print posMat.T.shape
-		print geMat.shape
 		
 		temp = np.hstack((posMat.T,geMat,hmMat))
 		#print temp.shape
 		fileName = '/cbio/grlab/home/dkuo/temp/' + genes[i] + '_' + cellType +'.hdf5'
 		f = h5py.File(fileName, 'a')
 		f.create_dataset(name=genes[i], data=temp)
-		for colNum in range(len(geFileList) + 1):
+		for colNum in range(temp.shape[1]):
 			if colNum == 0:
 				f.attrs.create(name=str(colNum), data='position')
-	
-			elif colNum > 0 & colNum < len(geFileList) - 1:
+			elif 0 < colNum < (len(geFileList) - 1):
 				#replace len(geFileList) with number of GE Tracks
-				f.attrs.create(name=str(colNum), data='Gene expression' + geTrackNames[colNum-1])
-	
+				f.attrs.create(name=str(colNum), data='Gene expression/' + geTrackNames[colNum-1])
 				#TODO: include methylation tracks as well
 			else:
-				f.attrs.create(name=str(colNum), data='Histone Tracks' + hmTrackNames[colNum - len(geFileList) -1])
+				f.attrs.create(name=str(colNum), data='Histone Track/' + hmTrackNames[colNum - len(geFileList) -1])
 		f.close
 		middle2 = time.time()
 		print middle2 - middle1
