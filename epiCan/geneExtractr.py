@@ -42,7 +42,9 @@ for g in genesRaw:
 	genes.append(curGene)
 
 
-cellTypeList = ['k562','gm12878','h1hesc','hela','hepg2', 'huvec']
+#cellTypeList = ['k562','gm12878','h1hesc','hela','hepg2', 'huvec']
+
+cellTypeList = ['k562','gm12878','h1hesc','hela']
 
 genesSubset = genes[1:10]
 
@@ -55,7 +57,7 @@ for ct in cellTypeList:
 		if files.endswith(".bigWig"):
 			geFileList.append(geDir + '/' + files)
 	hmFileList = []
-	os.chdir("/cbio/grlab/share/databases/encode/" + ct + "/histonePeaks/bw/")
+	os.chdir("/cbio/grlab/share/databases/encode/" + ct + "/histone/bw/")
 	hmDir = os.getcwd()
 	for files in os.listdir("."):
 		if files.endswith(".bw"):
@@ -72,7 +74,7 @@ for files in os.listdir("."):
         geFileList.append(geDir + '/' + files)
 
 hmFileList = []
-os.chdir("/cbio/grlab/share/databases/encode/k562/histonePeaks/bw/")
+os.chdir("/cbio/grlab/share/databases/encode/k562/histone/bw/")
 hmDir = os.getcwd()
 for files in os.listdir("."):
 	if files.endswith(".bw"):
@@ -96,21 +98,26 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 		#ge from bigwiglist
 		geMat = []
 		hmMat = []
+		geTrackNames = []
+		hmTrackNames = []
 		print hmFileList
 		for ge_count in range(len(geFileList)):
 			if ge_count == 0:
+				geTrackNames.append(geFileList[ge_count].split("/")[-1])
 				geFile = loadBw(geFileList[ge_count])
 				oneGeMat = np.mat(geFile.get_as_array(chromosome, starts[i], stops[i]).T)
 				oneGeMat[np.isnan(oneGeMat)] = 0
 				geMat = np.mat(geMat)
 				geMat = np.mat(oneGeMat.T)
 			else:
+				geTrackNames.append(geFileList[ge_count].split("/")[-1])
 				geFile = loadBw(geFileList[ge_count])
 				oneGeMat = np.mat(geFile.get_as_array(chromosome, starts[i], stops[i]).T)
 				oneGeMat[np.isnan(oneGeMat)] = 0
 				geMat = np.hstack((geMat, oneGeMat.T))
 		for hm_count in range(len(hmFileList)):
 			if hm_count == 0:
+				hmTrackNames.append(hmFileList[hm_count].split("/")[-1])
 				hmFile = loadBw(hmFileList[hm_count])
 				oneHmMat = np.mat(hmFile.get_as_array(chromosome, starts[i], stops[i]).T)
 				oneHmMat[np.isnan(oneHmMat)] = 0
@@ -118,6 +125,7 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 				hmMat = np.mat(oneHmMat.T)
 				print hmMat.shape
 			else:
+				hmTrackNames.append(hmFileList[hm_count].split("/")[-1])
 				hmFile = loadBw(hmFileList[hm_count])
 				oneHmMat = np.mat(hmFile.get_as_array(chromosome, starts[i], stops[i]).T)
 				oneHmMat[np.isnan(oneHmMat)] = 0
@@ -137,11 +145,11 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 	
 			elif colNum > 0 & colNum < len(geFileList) - 1:
 				#replace len(geFileList) with number of GE Tracks
-				f.attrs.create(name=str(colNum), data='Gene expression')
+				f.attrs.create(name=str(colNum), data='Gene expression' + geTrackNames[colNum-1])
 	
 				#TODO: include methylation tracks as well
 			else:
-				f.attrs.create(name=str(colNum), data='Histone Tracks')
+				f.attrs.create(name=str(colNum), data='Histone Tracks' + hmTrackNames[colNum - len(geFileList) -1])
 		f.close
 		middle2 = time.time()
 		print middle2 - middle1
