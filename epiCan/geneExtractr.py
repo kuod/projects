@@ -43,10 +43,13 @@ for g in genesRaw:
 
 
 #cellTypeList = ['k562','gm12878','h1hesc','hela','hepg2', 'huvec']
-
 cellTypeList = ['k562','gm12878','h1hesc','hela']
 
-genesSubset = genes[1:10]
+
+#Subset parameters
+startSubset = starts[1:100]
+stopSubset = stops[1:100]
+genesSubset = genes[1:100]
 
 for ct in cellTypeList:
 	geFileList = []
@@ -63,22 +66,6 @@ for ct in cellTypeList:
 		if files.endswith(".bw"):
 			hmFileList.append(hmDir + '/' + files)
 	saveCellTypeDat(genesSubset, startSubset, stopSubset, ct, geFileList, hmFileList)
-
-
-#load ge bw file 
-geFileList = []
-os.chdir("/cbio/grlab/share/databases/encode/k562/rnaSeqPolACyto/")
-geDir = os.getcwd() 
-for files in os.listdir("."):
-    if files.endswith(".bigWig"):
-        geFileList.append(geDir + '/' + files)
-
-hmFileList = []
-os.chdir("/cbio/grlab/share/databases/encode/k562/histone/bw/")
-hmDir = os.getcwd()
-for files in os.listdir("."):
-	if files.endswith(".bw"):
-		hmFileList.append(hmDir + '/' + files)
 
 #loadBW func
 def loadBw(file):
@@ -132,6 +119,7 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 		temp = np.hstack((posMat.T,geMat,hmMat))
 		#print temp.shape
 		fileName = '/cbio/grlab/home/dkuo/temp/' + genes[i] + '_' + cellType +'.hdf5'
+		
 		f = h5py.File(fileName, 'a')
 		f.create_dataset(name=genes[i], data=temp)
 		for colNum in range(temp.shape[1]):
@@ -145,42 +133,56 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 				f.attrs.create(name=str(colNum), data='Histone Track/' + hmTrackNames[colNum - len(geFileList) -1])
 		f.close
 		middle2 = time.time()
-		print middle2 - middle1
+		print 'One gene took: ' + str(middle2 - middle1)
 	#np.savez(fileName, temp)
 	end = time.time()
-	print end - start
+	print 'Total time for genes in a cell line: ' + str(end - start)
 
-#testing code
-startSubset = starts[1:100]
-stopSubset = stops[1:100]
 
-for i in range(10):
-	#pos index
-	posMat = []
-	posMat = np.mat(np.arange(startSubset[i], stopSubset[i], 1))
-	#geneExp summary
 
-	#ge from bigwig
-	geMat = []
-	geMat = np.mat(bwf.get_as_array(chromosome, startSubset[i], stopSubset[i]).T)
-	geMat[np.isnan(geMat)] = 0
-
-	ts1 = time.time()
-	hmTrack = htGen(startSubset[i], stopSubset[i], hm1Coord)
-	hmTrack = np.mat(hmTrack) 
-	ts2 = time.time()
-	print ts2 - ts1
-
-	temp = np.hstack((posMat.T,geMat.T, hmTrack.T))
-	#fileName = '/cbio/grlab/projects/epiCan/results/chr21/' + genes[i] 
-	#numpy.savez(fileName, temp)
-	print np.max(temp[:,2])
-	print '\n'
-	print np.max(temp[:,1])
+#for i in range(10):
+#	#pos index
+#	posMat = []
+#	posMat = np.mat(np.arange(startSubset[i], stopSubset[i], 1))
+#	#geneExp summary
+#
+#	#ge from bigwig
+#	geMat = []
+#	geMat = np.mat(bwf.get_as_array(chromosome, startSubset[i], stopSubset[i]).T)
+#	geMat[np.isnan(geMat)] = 0
+#
+#	ts1 = time.time()
+#	hmTrack = htGen(startSubset[i], stopSubset[i], hm1Coord)
+#	hmTrack = np.mat(hmTrack) 
+#	ts2 = time.time()
+#	print ts2 - ts1
+#
+#	temp = np.hstack((posMat.T,geMat.T, hmTrack.T))
+#	#fileName = '/cbio/grlab/projects/epiCan/results/chr21/' + genes[i] 
+#	#numpy.savez(fileName, temp)
+#	print np.max(temp[:,2])
+#	print '\n'
+#	print np.max(temp[:,1])
 #########################################
 
-def loadHm(file):
-	hmArray = np.loadtxt(file, delimiter='\t', usecols=(0,1,2,4), 
-	dtype={'names':('chrom', 'chromStart', 'chromEnd','score'), 
-	'formats': ('S5', 'u4','u4','u4')}) 
-	return hmArray
+#def loadHm(file):
+#	hmArray = np.loadtxt(file, delimiter='\t', usecols=(0,1,2,4), 
+#	dtype={'names':('chrom', 'chromStart', 'chromEnd','score'), 
+#	'formats': ('S5', 'u4','u4','u4')}) 
+#	return hmArray
+
+###older test code
+#load ge bw file 
+#geFileList = []
+#os.chdir("/cbio/grlab/share/databases/encode/k562/rnaSeqPolACyto/")
+#geDir = os.getcwd() 
+#for files in os.listdir("."):
+#    if files.endswith(".bigWig"):
+#        geFileList.append(geDir + '/' + files)
+#
+#hmFileList = []
+#os.chdir("/cbio/grlab/share/databases/encode/k562/histone/bw/")
+#hmDir = os.getcwd()
+#for files in os.listdir("."):
+#	if files.endswith(".bw"):
+#		hmFileList.append(hmDir + '/' + files)#
