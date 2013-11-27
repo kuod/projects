@@ -27,18 +27,23 @@ for f in geneFiles:
 
 uniqGenes = np.unique(uniqGenes)
 
+for uGene in uniqGenes:
+	if uGene in geneFiles:
+		print geneFiles
+
 #hardcoded
 kVal = 2
 
-def kNn(kVal, test, training, distFunc):
+#def kNn(kVal, test, training, distFunc):
 
-
-
-def dotProd(test, training):
-	return np.dot(test, training)
+#def dotProd(test, training):
+#	return np.dot(test, training)
 
 def eucDist(input, training):
-	return la.norm(test-training)
+	d = np.sum((input-trainin)^2)
+	return d
+
+	#return la.norm(test-training)
 
 def sqeucDist(input,training):
 	return spsp.distance.sqeuclidian(test, training)

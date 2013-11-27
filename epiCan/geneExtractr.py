@@ -1,5 +1,6 @@
 import numpy as np
 import sys, os, csv
+import os.path
 import time
 import h5py
 from bx.bbi.bigwig_file import BigWigFile
@@ -42,14 +43,14 @@ for g in genesRaw:
 	genes.append(curGene)
 
 
-#cellTypeList = ['k562','gm12878','h1hesc','hela','hepg2', 'huvec']
-cellTypeList = ['k562','gm12878','h1hesc','hela']
+cellTypeList = ['k562','gm12878','h1hesc','hela','hepg2', 'huvec']
+#cellTypeList = ['k562','gm12878','h1hesc','hela']
 
 
 #Subset parameters
-startSubset = starts[1:100]
-stopSubset = stops[1:100]
-genesSubset = genes[1:100]
+startSubset = starts[0:100]
+stopSubset = stops[0:100]
+genesSubset = genes[0:100]
 
 for ct in cellTypeList:
 	geFileList = []
@@ -78,66 +79,67 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 	start = time.time()
 	for i in range(len(genes)):
 		middle1 = time.time()
-		#pos index
-		posMat = []
-		posMat = np.mat(np.arange(starts[i], stops[i], 1))
-		#geneExp summary
-		#ge from bigwiglist
-		geMat = []
-		hmMat = []
-		geTrackNames = []
-		hmTrackNames = []
-		for ge_count in range(len(geFileList)):
-			if ge_count == 0:
-				geTrackNames.append(geFileList[ge_count].split("/")[-1])
-				geFile = loadBw(geFileList[ge_count])
-				oneGeMat = np.mat(geFile.get_as_array(chromosome, starts[i], stops[i]).T)
-				oneGeMat[np.isnan(oneGeMat)] = 0
-				geMat = np.mat(geMat)
-				geMat = np.mat(oneGeMat.T)
-			else:
-				geTrackNames.append(geFileList[ge_count].split("/")[-1])
-				geFile = loadBw(geFileList[ge_count])
-				oneGeMat = np.mat(geFile.get_as_array(chromosome, starts[i], stops[i]).T)
-				oneGeMat[np.isnan(oneGeMat)] = 0
-				geMat = np.hstack((geMat, oneGeMat.T))
-		for hm_count in range(len(hmFileList)):
-			if hm_count == 0:
-				hmTrackNames.append(hmFileList[hm_count].split("/")[-1])
-				hmFile = loadBw(hmFileList[hm_count])
-				oneHmMat = np.mat(hmFile.get_as_array(chromosome, starts[i], stops[i]).T)
-				oneHmMat[np.isnan(oneHmMat)] = 0
-				hmMat = np.mat(hmMat)
-				hmMat = np.mat(oneHmMat.T)
-			else:
-				hmTrackNames.append(hmFileList[hm_count].split("/")[-1])
-				hmFile = loadBw(hmFileList[hm_count])
-				oneHmMat = np.mat(hmFile.get_as_array(chromosome, starts[i], stops[i]).T)
-				oneHmMat[np.isnan(oneHmMat)] = 0
-				hmMat = np.hstack((hmMat, oneHmMat.T))
-		
-		temp = np.hstack((posMat.T,geMat,hmMat))
-		#print temp.shape
 		fileName = '/cbio/grlab/home/dkuo/temp/' + genes[i] + '_' + cellType +'.hdf5'
-		
-		f = h5py.File(fileName, 'a')
-		f.create_dataset(name=genes[i], data=temp)
-		for colNum in range(temp.shape[1]):
-			if colNum == 0:
-				f.attrs.create(name=str(colNum), data='position')
-			elif 0 < colNum < (len(geFileList) - 1):
+		if os.path.isfile(fileName):
+			pass
+		else:
+			#pos index
+			posMat = []
+			posMat = np.mat(np.arange(starts[i], stops[i], 1))
+			#geneExp summary
+			#ge from bigwiglist
+			geMat = []
+			hmMat = []
+			geTrackNames = []
+			hmTrackNames = []
+			for ge_count in range(len(geFileList)):
+				if ge_count == 0:
+					geTrackNames.append(geFileList[ge_count].split("/")[-1])
+					geFile = loadBw(geFileList[ge_count])
+					oneGeMat = np.mat(geFile.get_as_array(chromosome, starts[i], stops[i]).T)
+					oneGeMat[np.isnan(oneGeMat)] = 0
+					geMat = np.mat(geMat)
+					geMat = np.mat(oneGeMat.T)
+				else:
+					geTrackNames.append(geFileList[ge_count].split("/")[-1])
+					geFile = loadBw(geFileList[ge_count])
+					oneGeMat = np.mat(geFile.get_as_array(chromosome, starts[i], stops[i]).T)
+					oneGeMat[np.isnan(oneGeMat)] = 0
+					geMat = np.hstack((geMat, oneGeMat.T))
+			for hm_count in range(len(hmFileList)):
+				if hm_count == 0:
+					hmTrackNames.append(hmFileList[hm_count].split("/")[-1])
+					hmFile = loadBw(hmFileList[hm_count])
+					oneHmMat = np.mat(hmFile.get_as_array(chromosome, starts[i], stops[i]).T)
+					oneHmMat[np.isnan(oneHmMat)] = 0
+					hmMat = np.mat(hmMat)
+					hmMat = np.mat(oneHmMat.T)
+				else:
+					hmTrackNames.append(hmFileList[hm_count].split("/")[-1])
+					hmFile = loadBw(hmFileList[hm_count])
+					oneHmMat = np.mat(hmFile.get_as_array(chromosome, starts[i], stops[i]).T)
+					oneHmMat[np.isnan(oneHmMat)] = 0
+					hmMat = np.hstack((hmMat, oneHmMat.T))
+			
+			temp = np.hstack((posMat.T,geMat,hmMat))
+			#print temp.shape
+			f = h5py.File(fileName, 'a')
+			f.create_dataset(name=genes[i], data=temp)
+			for colNum in range(temp.shape[1]):
+				if colNum == 0:
+					f.attrs.create(name=str(colNum), data='position')
+				elif 0 < colNum < (len(geFileList) - 1):
 				#replace len(geFileList) with number of GE Tracks
-				f.attrs.create(name=str(colNum), data='Gene expression/' + geTrackNames[colNum-1])
-				#TODO: include methylation tracks as well
-			else:
-				f.attrs.create(name=str(colNum), data='Histone Track/' + hmTrackNames[colNum - len(geFileList) -1])
-		f.close
-		middle2 = time.time()
-		print 'One gene took: ' + str(middle2 - middle1)
-	#np.savez(fileName, temp)
+					f.attrs.create(name=str(colNum), data='Gene expression/' + geTrackNames[colNum-1])
+					#TODO: include methylation tracks as well
+				else:
+					f.attrs.create(name=str(colNum), data='Histone Track/' + hmTrackNames[colNum - len(geFileList) -1])
+			f.close
+			middle2 = time.time()
+			print 'One gene took: ' + str(middle2 - middle1)
+		#np.savez(fileName, temp)
 	end = time.time()
 	print 'Total time for genes in a cell line: ' + str(end - start)
-
 
 
 #for i in range(10):
