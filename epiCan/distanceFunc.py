@@ -6,21 +6,21 @@
 import h5py
 import os
 import numpy as np
-from numpy import linalg as la
 from scipy import spatial as spsp
 import matplotlib.pyplot as plt
 import time
 
 #All gene files in geneFiles
-resultsFolder = '/cbio/grlab/home/dkuo/projects/epican/results/131127/'
-geneFolder = '/cbio/grlab/home/dkuo/temp'
+geneFolder = '/cbio/grlab/share/databases/encode/hdf5/'
 geneFiles = []
 os.chdir( geneFolder )
 geDir = os.getcwd() 
-for files in os.listdir("."):
-	if files.endswith(".hdf5"):
-		geneFiles.append(geDir + '/' + files)
-
+for geneFile in os.listdir("."):
+	if geneFile.endswith(".hdf5"):
+		geneFiles.append(geDir + '/' + geneFile)
+resultsFolder = '/cbio/grlab/home/dkuo/projects/epican/results/131128/'
+if not os.path.exists(resultsFolder):
+	os.makedirs(resultsFolder)
 
 def dist(inputMat, mode):
 	if mode == 'euc':
@@ -29,51 +29,55 @@ def dist(inputMat, mode):
 		
 #getsGeneNames
 uniqGenes = []
-for geneFile in geneFiles:
-	uniqGenes.append(geneFile.split('/')[-1].split('_')[0])
+for gF in geneFiles:
+	uniqGenes.append(gF.split('/')[-1].split('_')[0])
 uniqGenes = np.unique(uniqGenes)
 
+subsetUniqGenes = uniqGenes[2:10]
+
 start = time.time()
-for uGene in uniqGenes:
+for uGene in subsetUniqGenes:
 	#find the files that correspond to that gene
-	genesByCellTypes = filter(lambda x: uGene in x, geneFiles)
+	geneCellTypesList = filter(lambda x: uGene in x, geneFiles)
 	gexMat = []
+	gexMat = np.mat(gexMat)
 	geMatName = []
-	for geneOneCellType in genesByCellTypes:
-		#print 'now on ' + geneCellTypeFile
-		f = h5py.File(str(geneOneCellType), 'r')
-		#print f.values()
+	for geneCellTypeOne in geneCellTypesList:
+		print 'now on ' + geneCellTypeOne
+		f = h5py.File(geneCellTypeOne, 'r')
 		g = f.__getitem__(uGene)
+		print 'so far so good on ' + geneCellTypeOne
 		#get gene expression indices
 		indices = [i for i, s in enumerate(f.attrs.values()) if 'Gene expression' in s]
-		
+		print indices
 		if len(gexMat) == 0:
-			gexMat = np.mat(g[:,idx]).T
+			gexMat = np.mat(g[:,0]).T
 			geMatName = []
 		else:
 			for idx in indices:
-				gexMat = np.hstack((gexMat, np.mat(g[:,idx]).T))
-				#print gexMat.shape
 				geMatName.append(f.attrs.values()[idx])
+				print 'gexmat shape is ' + gexMat.shape
+				print 'index is ' + str(idx)
+				gexMat = np.hstack((gexMat, np.mat(g[:,idx]).T))
+				
 		f.close()
-		#print geMatName
-		gexMat2 = gexMat[:,1:].T
-		#print gexMat2.shape
-		distMat = dist(gexMat2,'euc')
-		#print distMat.shape
-		#print 'oneCellTypeDone'
+	print gexMat.shape
+	gexMat2 = gexMat[:,1:]
+	distMat = dist(gexMat2,'euc')
+	print "dismat shape is " + str(distMat.shape)
+	print geMatName
 	fig = plt.figure()
 	fig.suptitle(uGene,fontsize=14, fontweight='bold')
-
 	ax = fig.add_subplot(111)
 	cax = ax.matshow(distMat, interpolation='nearest')
 	#ax.set_xticklabels(['']+geMatName, rotation=45)
 	ax.set_yticklabels(['']+geMatName)
 	figName = resultsFolder + uGene + '_euc.png'
-	fig.savefig(figName, bbox_inches='tight')
+	fig.savefig(figName)
 	print 'onto the next one'
-	pyplot.clf()
-	#plt.show()
+	plt.close()
+	plt.clf()
+	
 end = time.time()
 print 'Total time: ' + str(end - start)
 

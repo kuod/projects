@@ -20,7 +20,7 @@ genesRaw = np.loadtxt(geneListFile, delimiter='\t',
 	'u4','u4','S1','S1','S1','S100')})
 
 chromosome = 'chr21'
-
+outputDir = '/cbio/grlab/share/databases/encode/hdf5/'
 #Get methylation patterns
 #methylation in bed
 #methylRaw = np.loadtxt(methylFile, delimiter='\t', usecols=(0,1,2,4), dtype={'names':('chrom', 'chromStart', 'chromEnd',
@@ -41,11 +41,8 @@ for g in genesRaw:
 	stops.append(g[4]+1000)
 	curGene = g[8].split()[1].translate(None, '";')
 	genes.append(curGene)
-
-
 cellTypeList = ['k562','gm12878','h1hesc','hela','hepg2', 'huvec']
 #cellTypeList = ['k562','gm12878','h1hesc','hela']
-
 
 #Subset parameters
 startSubset = starts[0:100]
@@ -79,7 +76,7 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 	start = time.time()
 	for i in range(len(genes)):
 		middle1 = time.time()
-		fileName = '/cbio/grlab/home/dkuo/temp/' + genes[i] + '_' + cellType +'.hdf5'
+		fileName = outputDir + genes[i] + '_' + cellType +'.hdf5'
 		if os.path.isfile(fileName):
 			pass
 		else:
@@ -134,7 +131,7 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 					#TODO: include methylation tracks as well
 				else:
 					f.attrs.create(name=str(colNum), data='Histone Track/' + hmTrackNames[colNum - len(geFileList) -1])
-			f.close
+			f.close()
 			middle2 = time.time()
 			print 'One gene took: ' + str(middle2 - middle1)
 		#np.savez(fileName, temp)
