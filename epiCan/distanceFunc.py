@@ -36,47 +36,52 @@ uniqGenes = np.unique(uniqGenes)
 subsetUniqGenes = uniqGenes[2:10]
 
 start = time.time()
-for uGene in subsetUniqGenes:
+for uGene in uniqGenes:
 	#find the files that correspond to that gene
 	geneCellTypesList = filter(lambda x: uGene in x, geneFiles)
-	gexMat = []
-	gexMat = np.mat(gexMat)
-	geMatName = []
 	for geneCellTypeOne in geneCellTypesList:
 		print 'now on ' + geneCellTypeOne
-		f = h5py.File(geneCellTypeOne, 'r')
-		g = f.__getitem__(uGene)
-		print 'so far so good on ' + geneCellTypeOne
-		#get gene expression indices
-		indices = [i for i, s in enumerate(f.attrs.values()) if 'Gene expression' in s]
-		print indices
-		if len(gexMat) == 0:
-			gexMat = np.mat(g[:,0]).T
+		try: 
+			f = h5py.File(geneCellTypeOne, 'r')
+			g = f.__getitem__(uGene)
+			gexMat = []
+			gexMat = np.mat(gexMat)
 			geMatName = []
-		else:
-			for idx in indices:
-				geMatName.append(f.attrs.values()[idx])
-				print 'gexmat shape is ' + gexMat.shape
-				print 'index is ' + str(idx)
-				gexMat = np.hstack((gexMat, np.mat(g[:,idx]).T))
-				
-		f.close()
-	print gexMat.shape
-	gexMat2 = gexMat[:,1:]
-	distMat = dist(gexMat2,'euc')
-	print "dismat shape is " + str(distMat.shape)
-	print geMatName
-	fig = plt.figure()
-	fig.suptitle(uGene,fontsize=14, fontweight='bold')
-	ax = fig.add_subplot(111)
-	cax = ax.matshow(distMat, interpolation='nearest')
-	#ax.set_xticklabels(['']+geMatName, rotation=45)
-	ax.set_yticklabels(['']+geMatName)
-	figName = resultsFolder + uGene + '_euc.png'
-	fig.savefig(figName)
-	print 'onto the next one'
-	plt.close()
-	plt.clf()
+			print 'so far so good on ' + geneCellTypeOne
+			#get gene expression indices
+			indices = [i for i, s in enumerate(f.attrs.values()) if 'Gene expression' in s]
+			print 'indices is' + str(indices)
+			if len(gexMat) <= 1:
+				print 'shape of first col is' + str(g[:,0].shape)
+				gexMat = np.mat(g[:,0]).T
+				print 'gexmat shape is ' + str(gexMat.shape)
+				geMatName = []
+			else:
+				for idx in indices:
+					geMatName.append(f.attrs.values()[idx])
+					print 'gexmat shape is ' + str(gexMat.shape)
+					print 'index is ' + str(idx)
+					print 'shape of idx is' + str(g[:,idx].shape)
+					gexMat = np.hstack((gexMat, np.mat(g[:,idx]).T))
+			f.close()
+			print "here's what gexMat is" + str(gexMat.shape)
+			gexMat2 = gexMat[:,1:]
+			distMat = dist(gexMat2,'euc')
+			print "dismat shape is " + str(distMat.shape)
+			print geMatName
+			fig = plt.figure()
+			fig.suptitle(uGene,fontsize=14, fontweight='bold')
+			ax = fig.add_subplot(111)
+			cax = ax.matshow(distMat, interpolation='nearest')
+			#ax.set_xticklabels(['']+geMatName, rotation=45)
+			ax.set_yticklabels(['']+geMatName)
+			figName = resultsFolder + uGene + '_euc.png'
+			fig.savefig(figName)
+			print 'onto the next one'
+			plt.close()
+			plt.clf()
+		except (IOError):
+			pass
 	
 end = time.time()
 print 'Total time: ' + str(end - start)
