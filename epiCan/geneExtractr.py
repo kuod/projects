@@ -78,7 +78,13 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 		middle1 = time.time()
 		fileName = outputDir + genes[i] + '_' + cellType +'.hdf5'
 		if os.path.isfile(fileName):
-			pass
+			try:
+				h = h5py.File(fileName)
+				print "The file exists: " + str(fileName)
+				continue
+			except(IOError):
+				print "The file doesn't exist: " + str(fileName) + " consider rerunning"
+				os.remove(fileName)
 		else:
 			#pos index
 			posMat = []
