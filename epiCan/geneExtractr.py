@@ -44,27 +44,6 @@ for g in genesRaw:
 cellTypeList = ['k562','gm12878','h1hesc','hela','hepg2', 'huvec']
 #cellTypeList = ['k562','gm12878','h1hesc','hela']
 
-#Subset parameters
-startSubset = starts[0:100]
-stopSubset = stops[0:100]
-genesSubset = genes[0:100]
-
-for ct in cellTypeList:
-	geFileList = []
-	gePath = "/cbio/grlab/share/databases/encode/" + ct + "/rnaSeqPolACyto/"
-	os.chdir( gePath )
-	geDir = os.getcwd() 
-	for files in os.listdir("."):
-		if files.endswith(".bigWig"):
-			geFileList.append(geDir + '/' + files)
-	hmFileList = []
-	os.chdir("/cbio/grlab/share/databases/encode/" + ct + "/histone/bw/")
-	hmDir = os.getcwd()
-	for files in os.listdir("."):
-		if files.endswith(".bw"):
-			hmFileList.append(hmDir + '/' + files)
-	saveCellTypeDat(genesSubset, startSubset, stopSubset, ct, geFileList, hmFileList)
-
 #loadBW func
 def loadBw(file):
 	bw = BigWigFile(open(file))
@@ -144,6 +123,26 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 	end = time.time()
 	print 'Total time for genes in a cell line: ' + str(end - start)
 
+#Subset parameters
+#startSubset = starts[0:100]
+#stopSubset = stops[0:100]
+#genesSubset = genes[0:100]
+
+for ct in cellTypeList:
+	geFileList = []
+	gePath = "/cbio/grlab/share/databases/encode/" + ct + "/rnaSeqPolACyto/"
+	os.chdir( gePath )
+	geDir = os.getcwd() 
+	for files in os.listdir("."):
+		if files.endswith(".bigWig"):
+			geFileList.append(geDir + '/' + files)
+	hmFileList = []
+	os.chdir("/cbio/grlab/share/databases/encode/" + ct + "/histone/bw/")
+	hmDir = os.getcwd()
+	for files in os.listdir("."):
+		if files.endswith(".bw"):
+			hmFileList.append(hmDir + '/' + files)
+	saveCellTypeDat(genes, starts, stops, ct, geFileList, hmFileList)
 
 #for i in range(10):
 #	#pos index
