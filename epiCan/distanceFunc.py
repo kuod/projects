@@ -8,6 +8,7 @@ import os
 import numpy as np
 from scipy import spatial as spsp
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import time
 
 #All gene files in geneFiles
@@ -26,6 +27,8 @@ def dist(inputMat, mode):
 	if mode == 'euc':
 		Y = spsp.distance.pdist(inputMat, 'euclidean')
 		return spsp.distance.squareform(Y)
+	if mode == '':
+		pass
 
 quitInd = False
 
@@ -35,8 +38,11 @@ for gF in geneFiles:
 	uniqGenes.append(gF.split('/')[-1].split('_')[0])
 uniqGenes = np.unique(uniqGenes)
 
-start = time.time()
+disMatList = []
+geMatNameList = []
+
 for uGene in uniqGenes:
+	start = time.time()
 	#find the files that correspond to that gene
 	#gets only the unique genes
 	uGeneCellTyps = filter(lambda x: uGene in x, geneFiles)
@@ -81,10 +87,14 @@ for uGene in uniqGenes:
 	distMat = dist(gexMat2.T,'euc')
 	#print "dismat shape is " + str(distMat.shape)
 	#print geMatName
+	disMatList.append(distMat)
+	geMatNameList.append(geMatName)
+
+
 	fig = plt.gcf()
 	fig.suptitle(uGene,fontsize=14, fontweight='bold')
 	ax = fig.add_subplot(111)
-	cax = ax.matshow(distMat, interpolation='nearest', cmap = cm.Greys_r)
+	cax = ax.matshow(distMat, interpolation='nearest', cmap = cm.Greys_r,rasterized=True)
 	cbar = fig.colorbar(cax)
 	fig.set_size_inches(15,5)
 	ax.set_frame_on(False)
@@ -98,7 +108,8 @@ for uGene in uniqGenes:
 	fig.savefig(figName, bbox_inches='tight',dpi = 200)
 	plt.close()
 	plt.clf()
+	end = time.time()
+	print 'Total time: ' + str(end - start)
 	if quitInd:
 		break
-end = time.time()
-print 'Total time: ' + str(end - start)
+	

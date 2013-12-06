@@ -3,11 +3,12 @@ import sys, os, csv
 import os.path
 import time
 import h5py
+import re
 from bx.bbi.bigwig_file import BigWigFile
 
 #set test file paths
 bwTestFile = "/cbio/grlab/share/databases/encode/gm12878/rnaSeqPolACyto/wgEncodeCshlLongRnaSeqGm12878CytosolPapMinusRawSigRep1.bigWig"
-geneListFile = "/cbio/grlab/share/databases/genomes/H_sapiens/GENCODE/release18/gencode.v18.annotation.chr21.gtf"
+geneListFile = "/cbio/grlab/share/databases/genomes/H_sapiens/GENCODE/release18/gencode.v18.annotation.genesPcLncrna.gtf"
 methylFile = "/cbio/grlab/share/databases/encode/k562/methyl/wgEncodeHaibMethylRrbsK562HaibSitesRep1_chr21.bed"
 
 #TODO Take in path of HM folder  
@@ -37,8 +38,8 @@ starts = []
 stops = []
 genes = []
 for g in genesRaw:
-	starts.append(g[3]-1000)
-	stops.append(g[4]+1000)
+	starts.append(g[3]-500)
+	stops.append(g[4]+500)
 	curGene = g[8].split()[1].translate(None, '";')
 	genes.append(curGene)
 cellTypeList = ['k562','gm12878','h1hesc','hela','hepg2', 'huvec']
@@ -50,19 +51,20 @@ def loadBw(file):
 	return bw
 
 #generate gene by gene matrix
-
 def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 	start = time.time()
 	for i in range(len(genes)):
 		middle1 = time.time()
 		fileName = outputDir + genes[i] + '_' + cellType +'.hdf5'
+		
 		if os.path.isfile(fileName):
 			try:
 				h = h5py.File(fileName)
 				print "The file exists: " + str(fileName)
+				h.close()
 				continue
 			except(IOError):
-				print "The file doesn't exist: " + str(fileName) + " consider rerunning"
+				print str(fileName) " doesn't open so deleting. Please rerun."
 				os.remove(fileName)
 		else:
 			#pos index
@@ -76,14 +78,20 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 			hmTrackNames = []
 			for ge_count in range(len(geFileList)):
 				if ge_count == 0:
-					geTrackNames.append(geFileList[ge_count].split("/")[-1])
+					geFileName = geFileList[ge_count].split("/")[-1]
+					geFileName = re.sub('wgEncodeCshlLongRnaSeq','',geFileName)
+					geFileName = re.sub('.bigWig','',geFileName)
+					geTrackNames.append(geFileName)
 					geFile = loadBw(geFileList[ge_count])
 					oneGeMat = np.mat(geFile.get_as_array(chromosome, starts[i], stops[i]).T)
 					oneGeMat[np.isnan(oneGeMat)] = 0
 					geMat = np.mat(geMat)
 					geMat = np.mat(oneGeMat.T)
 				else:
-					geTrackNames.append(geFileList[ge_count].split("/")[-1])
+					geFileName = geFileList[ge_count].split("/")[-1]
+					geFileName = re.sub('wgEncodeCshlLongRnaSeq','',geFileName)
+					geFileName = re.sub('.bigWig','',geFileName)
+					geTrackNames.append(geFileName)
 					geFile = loadBw(geFileList[ge_count])
 					oneGeMat = np.mat(geFile.get_as_array(chromosome, starts[i], stops[i]).T)
 					oneGeMat[np.isnan(oneGeMat)] = 0
@@ -112,10 +120,10 @@ def saveCellTypeDat(genes, starts, stops, cellType, geFileList, hmFileList):
 					f.attrs.create(name=str(colNum), data='position')
 				elif 0 < colNum < (len(geFileList) - 1):
 				#replace len(geFileList) with number of GE Tracks
-					f.attrs.create(name=str(colNum), data='Gene expression/' + geTrackNames[colNum-1])
+					f.attrs.create(name=str(colNum), data='GE-' + geTrackNames[colNum-1])
 					#TODO: include methylation tracks as well
 				else:
-					f.attrs.create(name=str(colNum), data='Histone Track/' + hmTrackNames[colNum - len(geFileList) -1])
+					f.attrs.create(name=str(colNum), data='HM-' + hmTrackNames[colNum - len(geFileList) -1])
 			f.close()
 			middle2 = time.time()
 			print 'One gene took: ' + str(middle2 - middle1)
