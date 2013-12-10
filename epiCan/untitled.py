@@ -130,10 +130,10 @@ def saveCellTypeDat(genes, chromosomes, starts, stops, cellType, geFileList, hmF
     print 'Total time for genes in a cell line: ' + str(end - start)
 
 #Subset parameters
-startSubset = starts[0:1000]
-stopSubset = stops[0:1000]
-genesSubset = genes[0:1000]
-chrSubset = chromosomes[0:1000]
+startSubset = starts[0:10]
+stopSubset = stops[0:10]
+genesSubset = genes[0:10]
+chrSubset = chromosomes[0:10]
 
 for ct in cellTypeList:
     geFileList = []
